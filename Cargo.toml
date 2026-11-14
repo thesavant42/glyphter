@@ -1,0 +1,19 @@
+[package]
+name = "glyph-font-viewer"
+version = "0.1.0"
+edition = "2021"
+description = "Native window that hosts the Glyphter web UI"
+
+[dependencies]
+wry = "0.57.2"
+tao = "0.37.2"
+windows-sys = { version = "0.61.2", features = [
+  "Win32_Foundation",
+  "Win32_Graphics_Gdi",
+  "Win32_UI_WindowsAndMessaging",
+  "Win32_System_Threading",
+] }
+
+[profile.release]
+opt-level = 1
+debug = false

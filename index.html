@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Glyphter</title>
+  <script>
+    // Apply the saved theme before first paint so there's no flash of the
+    // wrong colours on load. (app.js owns the toggle and keeps this in sync.)
+    try {
+      if (localStorage.getItem("gfv-theme") === "dark")
+        document.documentElement.setAttribute("data-theme", "dark");
+    } catch (e) {}
+  </script>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo" aria-hidden="true">Aa</span>
+      <div class="titles">
+        <h1>Glyphter</h1>
+        <span id="font-name" class="font-name">No font loaded</span>
+      </div>
+    </div>
+    <div class="top-actions">
+      <button id="theme-toggle" class="icon-btn" title="Toggle dark / light mode" aria-label="Toggle dark mode">🌙</button>
+      <label class="btn primary" title="TTF / OTF / WOFF / WOFF2 / TTC. (.svg is accepted only to tell you whether it's a usable font — browsers can't load SVG fonts)">
+        Open font
+        <input type="file" id="file" accept=".ttf,.otf,.woff,.woff2,.ttc,.svg" hidden />
+      </label>
+      <select id="font-pick" title="Loaded fonts"></select>
+    </div>
+  </header>
+
+  <div class="toolbar">
+    <div class="seg" id="plane-seg" role="tablist" aria-label="Unicode plane"></div>
+    <div class="seg">
+      <button data-view="defined" class="seg-btn active">Defined</button>
+      <button data-view="all" class="seg-btn">All</button>
+    </div>
+    <div class="zoom">
+      <button id="zoom-out" class="icon-btn" title="Smaller cells">–</button>
+      <span id="zoom-label" class="muted">160 px</span>
+      <button id="zoom-in" class="icon-btn" title="Larger cells">+</button>
+    </div>
+    <div class="search">
+      <input id="search" type="text" placeholder="Search codepoint (1f600) or name…" spellcheck="false" autocomplete="off" />
+      <button id="search-go" class="icon-btn" title="Go">⏎</button>
+    </div>
+  </div>
+
+  <main class="layout">
+    <section class="grid-wrap">
+      <div id="grid" class="grid"></div>
+    </section>
+
+    <aside class="inspector">
+      <div class="glyph-canvas-wrap">
+        <canvas id="glyph" width="460" height="460"></canvas>
+      </div>
+      <div class="glyph-meta">
+        <div class="big-codepoint" id="cp-label">—</div>
+        <div class="char-row">
+          <span class="char-sample" id="char-sample"></span>
+          <div class="kv">
+            <div><span>Name</span><b id="m-name">—</b></div>
+            <div><span>Glyph id</span><b id="m-gid">—</b></div>
+            <div><span>Advance</span><b id="m-adv">—</b></div>
+            <div><span>Bounding box</span><b id="m-bbox">—</b></div>
+            <div><span>Plane</span><b id="m-plane">—</b></div>
+          </div>
+        </div>
+        <div class="nav">
+          <button id="nav-first" class="icon-btn" title="First defined">⏮</button>
+          <button id="nav-prev" class="icon-btn" title="Previous (Ctrl+[)">◀</button>
+          <button id="nav-next" class="icon-btn" title="Next (Ctrl+])">▶</button>
+          <button id="nav-last" class="icon-btn" title="Last defined">⏭</button>
+        </div>
+        <div class="color-row" title="Colour used when exporting (applies to the SVG and PNG)">
+          <label class="color-chip" title="Fill colour (primary)">
+            <input type="color" id="color-fill" value="#000000" />
+            <span>Fill</span>
+          </label>
+          <label class="color-chip" title="Outline colour (secondary)">
+            <input type="color" id="color-stroke" value="#000000" />
+            <span>Outline</span>
+          </label>
+          <label class="stroke-chip" title="Outline thickness (0 = none)">
+            <input type="range" id="stroke-width" min="0" max="80" step="2" value="0" />
+            <span class="stroke-val" id="stroke-val">0</span>
+          </label>
+        </div>
+        <div class="export-row">
+          <button id="export-svg" class="btn">Export SVG</button>
+          <button id="export-png" class="btn">Export PNG</button>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <footer class="statusbar">
+    <span id="stat-format"></span>
+    <span id="stat-glyphs"></span>
+    <span id="stat-upem"></span>
+    <span id="stat-defined"></span>
+    <span id="stat-os2" class="grow"></span>
+  </footer>
+
+  <div id="toast" class="toast" hidden></div>
+
+  <script src="font.js"></script>
+  <script src="lib/opentype.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

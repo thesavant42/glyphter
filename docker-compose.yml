@@ -1,0 +1,18 @@
+services:
+  glyph-font-viewer:
+    build: .
+    image: glyph-font-viewer:latest
+    ports:
+      - "8080:80"
+    volumes:
+      # Uploaded fonts persist here across container restarts/rebuilds.
+      - gfv-fonts:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://127.0.0.1:80/api/fonts',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  gfv-fonts:

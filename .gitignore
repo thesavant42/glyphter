@@ -1,0 +1,27 @@
+# Rust build output (the ~1 GB cache — never commit this)
+target/
+**/target/
+
+# The prebuilt desktop binary — build it yourself with `cargo build --release`
+glyph-font-viewer.exe
+*/glyph-font-viewer.exe
+
+# Uploaded fonts persisted to disk (per-deployment data; created on first upload)
+data/
+**/data/
+
+# Screenshot output from the app's --screenshot mode
+shots/
+
+# Node / dev cruft
+*.log
+node_modules/
+
+# Scratch / temp working files (anything that starts with _)
+_*.js
+_cdp*/
+
+# OS noise
+.DS_Store
+Thumbs.db
+desktop.ini
