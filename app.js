@@ -143,6 +143,7 @@
     var idx = state.fonts.length - 1;
     registerFont(buf, idx).then(function (family) {
       state.fonts[idx].family = family;
+      state.fonts[idx].ready = true;
       if (idx === state.current) {
         state.fontFamily = family;
         renderGrid();
@@ -670,17 +671,11 @@
     // so the preview is a true WYSIWYG of what gets exported.
     var col = exportColors();
     ctx.fillStyle = col.fill;
-    if (dec && (dec.glyph.contours || (dec.glyph.compound))) {
-      ctx.beginPath();
-      drawGlyphOutline(ctx, dec.glyph, { sx: s, sy: s, dx: originX, dy: baselineY }, 0);
-      if (col.width > 0) {
-        ctx.lineWidth = col.width;
-        ctx.strokeStyle = col.stroke;
-        ctx.lineJoin = "round";
-        ctx.stroke("evenodd");
-      }
-      ctx.fill("evenodd");
-    } else if (state.fontFamily) {
+    // Draw with the browser's font engine — the same path the grid cells use
+    // and the same renderer inkBox measured the ink from, so the scale s is
+    // guaranteed to fit the glyph in the panel. The hand-parsed outline is
+    // only a last-resort fallback for when no FontFace is registered.
+    if (state.fontFamily) {
       // text-align "left": the pen origin lands exactly at (originX, baselineY),
       // which is what the ink measurement (inkBox) was computed for. "center"
       // would re-centre the text on originX and undo the offset.
@@ -693,6 +688,16 @@
         ctx.strokeText(String.fromCodePoint(cp), originX, baselineY);
       }
       ctx.fillText(String.fromCodePoint(cp), originX, baselineY);
+    } else if (dec && (dec.glyph.contours || dec.glyph.compound)) {
+      ctx.beginPath();
+      drawGlyphOutline(ctx, dec.glyph, { sx: s, sy: s, dx: originX, dy: baselineY }, 0);
+      if (col.width > 0) {
+        ctx.lineWidth = col.width;
+        ctx.strokeStyle = col.stroke;
+        ctx.lineJoin = "round";
+        ctx.stroke("evenodd");
+      }
+      ctx.fill("evenodd");
     }
   }
 
@@ -863,16 +868,29 @@
   function inkBox(cp, upem, adv) {
     var key = state.fontFamily + ":" + cp;
     if (key in inkCache) return inkCache[key];
+    // Only measure once the font is actually loaded; otherwise the canvas
+    // would measure a fallback font (or nothing for PUA icons) and cache a
+    // wrong box. Not ready -> null -> the em-box fallback in drawBigGlyph.
+    var entry = state.fonts && state.fonts[state.current];
+    if (!entry || !entry.ready) return null;
     var F = Math.min(upem, 512);            // font size in px; 1 px = upem/F units
     var u = upem / F;                       // font units per px
-    var W = Math.ceil(2 * F + (adv ? adv / u : F)); // pen origin at x = F, extra right for the advance
-    var H = 2 * F;                          // pen origin at y = F, covers ±1 em
+    // The pen origin sits at (OX, OY) with >= 2 em of clearance on every side
+    // (plus the advance to the right), so ink that extends beyond the em box —
+    // common in icon fonts like Peptasia — is measured in full and never
+    // clipped. A clipped measurement under-reports the ink, which is exactly
+    // what made the big view scale glyphs far too big and break the frame.
+    var advPx = adv ? Math.min(adv / u, 8 * F) : 2 * F; // advance in px, capped
+    var OX = Math.ceil(2 * F);              // 2 em left of the pen origin
+    var OY = Math.ceil(2 * F);              // 2 em above the baseline
+    var W = Math.ceil(OX + Math.max(2 * F, advPx)); // 2 em (or the advance) right
+    var H = Math.ceil(4 * F);               // 2 em above + 2 em below baseline
     var c = document.createElement("canvas");
     c.width = W; c.height = H;
     var x2 = c.getContext("2d");
     x2.font = F + "px " + state.fontFamily;
     x2.textAlign = "left"; x2.textBaseline = "alphabetic";
-    x2.fillText(String.fromCodePoint(cp), F, F);
+    x2.fillText(String.fromCodePoint(cp), OX, OY);
     var d = x2.getImageData(0, 0, W, H).data;
     var minx = W, miny = H, maxx = -1, maxy = -1;
     for (var y = 0; y < H; y++) {
@@ -885,8 +903,8 @@
       }
     }
     var r = null;
-    if (maxx >= 0) r = { x1: (minx - F) * u, x2: (maxx - F) * u,
-                         y1: (F - maxy) * u, y2: (F - miny) * u };
+    if (maxx >= 0) r = { x1: (minx - OX) * u, x2: (maxx - OX) * u,
+                         y1: (OY - maxy) * u, y2: (OY - miny) * u };
     if (Object.keys(inkCache).length > 400) inkCache = {};   // bounded cache
     inkCache[key] = r;
     return r;

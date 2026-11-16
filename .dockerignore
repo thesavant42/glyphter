@@ -1,0 +1,15 @@
+# Keep the Docker build context small and the image free of build cruft.
+# The image only needs the files the Dockerfile COPYs: index.html, style.css,
+# app.js, font.js, lib/, sample/, server.js, MECHANICS.md, mechanics.json.
+# Ignore everything else (especially the ~1 GB Rust build cache).
+target/
+*.exe
+.git/
+shots/
+data/
+_*.js
+*.log
+Cargo.lock
+DEPLOY.md
+docker-compose.yml
+.gitignore
