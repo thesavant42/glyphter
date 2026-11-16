@@ -121,6 +121,21 @@ docker compose up -d --build
 # then http://localhost:8080
 ```
 
+**Gotcha — a fresh clone is not enough by itself.** `docker compose up -d`
+does **not** build the image; it just runs one. If an old
+`glyph-font-viewer:latest` was already on the box (from a pre-fix build),
+`up -d` re-runs that stale image and the freshly cloned files are never
+baked in — the app keeps showing the old code. To deploy code you just
+cloned/pulled:
+
+```
+docker compose up -d --build      # or: docker compose build && docker compose up -d
+```
+
+Quick check that a running deploy has the code you expect:
+`curl http://<host>:8080/app.js` — the served bytes are what the browser
+gets.
+
 ### Notes
 
 - **The desktop window is not needed on the server.** It's a convenience
